@@ -3,7 +3,7 @@
    ============================================== */
 
 const FEED_URL = "https://news.csun.edu/wp-json/csunfeeds/v1/events-feed/career-center";
-const FEED_CACHE_KEY = "csun_events_cache_v1";
+const FEED_CACHE_KEY = "csun_events_cache_v2";
 const FEED_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 /**
@@ -44,7 +44,7 @@ async function fetchFeedWithCache(force = false) {
     console.warn("⚠️ Feed fetch failed, using cache if available:", err);
     const cached = JSON.parse(localStorage.getItem(FEED_CACHE_KEY) || "null");
     if (cached && Array.isArray(cached.data)) return cached.data;
-    return []; // nothing we can do
+    return [];
   }
 }
 
@@ -53,38 +53,45 @@ function normalizeFeed(items) {
   if (!Array.isArray(items)) return [];
 
   return items.map((e, idx) => {
-    // Robust field mapping with safe fallbacks
+    // ---- Robust field mapping from the sample feed ----
     const title =
-      get(e, ["title", "rendered"]) ||
-      e.title ||
+      (typeof e.title === "string" ? e.title : get(e, ["title", "rendered"])) ||
       e.name ||
       `Event ${idx + 1}`;
 
     const url =
-      e.link || e.url || e.permalink || e.registration || "#";
+      e.url || e.link || e.permalink || e.registration || "#";
 
-    // Dates/times (try multiple keys)
+    // Start / End — prefer event_object.start_date & end_date
     const startStr =
-      e.start || e.start_date || e.date || e.startDate || e.start_time || e.datetime || "";
+      get(e, ["event_object", "start_date"]) ||
+      get(e, ["event_object", "dates", "start", "date"]) ||
+      e.start_date || e.start || e.published_date || "";
+
     const endStr =
-      e.end || e.end_date || e.endDate || e.end_time || "";
+      get(e, ["event_object", "end_date"]) ||
+      get(e, ["event_object", "dates", "end", "date"]) ||
+      e.end_date || e.end || "";
 
-    const start = parseDate(startStr) || new Date(e.dateTime || Date.now());
-    const end   = parseDate(endStr)   || null;
+    const start = parseDateFlexible(startStr) || new Date();
+    const end   = parseDateFlexible(endStr);
 
-    // Location
-    const location = e.location || e.venue || e.place || e.room || "";
+    // Location (several possible places)
+    const location = e.location ||
+                     get(e, ["venues", 0, "post_title"]) ||
+                     get(e, ["event_object", "venues", 0, "post_title"]) ||
+                     "";
 
-    // Description / excerpt
-    const blurb =
-      stripHTML(e.excerpt || e.description || e.content || e.summary || "");
+    // Description / excerpt -> plain text
+    const blurb = stripHTML(e.excerpt || e.content || get(e, ["event_object", "excerpt"]) || "");
 
     // Featured image
     const image =
       get(e, ["featured_image", "url"]) ||
-      e.image_url || e.image || e.thumbnail || e.featuredImage || "";
+      get(e, ["featured_image", "sizes", "full", "url"]) ||
+      e.image_url || e.image || "";
 
-    // Time display
+    // Time label
     const time = buildTimeRange(start, end);
 
     // Date label (e.g., "Wed, Nov 5")
@@ -93,8 +100,7 @@ function normalizeFeed(items) {
     });
 
     return {
-      // calendar fields
-      Day: start.getDate(),
+      Day: start.getDate(),       // <-- drives the calendar placement
       Title: title,
       Date: dateLabel,
       Time: time,
@@ -103,22 +109,18 @@ function normalizeFeed(items) {
       QR_Link: url,
       Type: "event",
       Image: image,
-      // for sorting or debugging
-      _start: start
+      _start: start               // keep raw for filtering/logging
     };
-  })
-  // Keep original order from feed (no sorting), but
-  // if needed, you can sort by start: .sort((a,b)=>a._start-b._start)
-  ;
+  });
 }
 
-/** Filter to events that occur in the current month/year */
+/** Filter to events occurring in the current month/year */
 function filterToCurrentMonth(arr) {
   const now = new Date();
   const m = now.getMonth();
   const y = now.getFullYear();
   return arr.filter(e => {
-    const d = e._start || new Date();
+    const d = e._start instanceof Date ? e._start : new Date();
     return d.getMonth() === m && d.getFullYear() === y;
   });
 }
@@ -127,19 +129,28 @@ function filterToCurrentMonth(arr) {
 function get(obj, pathArr) {
   let cur = obj;
   for (const key of pathArr) {
-    if (!cur) return undefined;
+    if (cur == null) return undefined;
     cur = cur[key];
   }
   return cur;
 }
 
-function parseDate(any) {
+function parseDateFlexible(any) {
   if (!any) return null;
-  // Try ISO first
-  const d = new Date(any);
-  if (!isNaN(d.getTime())) return d;
+  if (any instanceof Date && !isNaN(any.getTime())) return any;
 
-  // Fallbacks: try parsing numbers or trimmed strings further if needed
+  if (typeof any === "number") {
+    const d = new Date(any);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  if (typeof any === "string") {
+    // Normalize "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
+    const s = any.trim().replace(" ", "T");
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
   return null;
 }
 
