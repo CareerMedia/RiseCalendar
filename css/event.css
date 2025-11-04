@@ -1,25 +1,21 @@
 /* ==================================
    css/event.css — Solid White Event Card
-   (Overlay: immediate show/hide; popup always centered; top-most z-index)
    ================================== */
 
-/* Overlay container — present but inert by default, at the very top */
 #event-overlay {
   position: fixed;
   inset: 0;
-  z-index: 2147483647; /* sit above everything, even transformed parents */
-
-  /* Centering context available always */
+  z-index: 2147483647;
   display: flex;
   align-items: center;
   justify-content: center;
 
-  /* Safe margins so card never hugs edges */
+  /* Safe margins */
   --overlay-pad-y: clamp(16px, 3vh, 48px);
   --overlay-pad-x: clamp(16px, 3vw, 64px);
   padding: var(--overlay-pad-y) var(--overlay-pad-x);
 
-  /* HIDDEN STATE (default) — no blur, no paint, no clicks */
+  /* Default hidden; JS also sets inline values to guarantee */
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
@@ -30,17 +26,7 @@
   transition: opacity .25s ease;
 }
 
-/* Safety belt: neutralize any stray inline styles when not open */
-#event-overlay:not(.is-open) {
-  background: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  pointer-events: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
-
-/* VISIBLE STATE — only when the popup is open */
+/* Class state (still supported), but JS also sets inline values */
 #event-overlay.is-open {
   visibility: visible;
   opacity: 1;
@@ -55,7 +41,7 @@
   position: relative;
   width: min(92vw, 1400px);
   max-height: calc(100dvh - (var(--overlay-pad-y) * 2));
-  background: #ffffff;          /* solid white */
+  background: #ffffff;          /* solid white for readability */
   border-radius: 80px;
   padding: clamp(24px, 2.5vh, 48px) clamp(24px, 3vw, 64px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
