@@ -6,6 +6,7 @@ const overlay = document.getElementById("event-overlay");
 
 /**
  * Show the event card with image above the title on the left.
+ * Adds a “continue reading” cue if the blurb is too long.
  * @param {Object} evt
  * @returns {Promise<void>}
  */
@@ -21,6 +22,7 @@ function showEventCard(evt) {
     const left = document.createElement("div");
     left.className = "event-content";
 
+    // Hero image (900x600 aspect)
     const hero = document.createElement("div");
     hero.className = "event-hero";
     const img = document.createElement("img");
@@ -29,12 +31,12 @@ function showEventCard(evt) {
     hero.appendChild(img);
 
     const title = document.createElement("h2");
-    title.textContent = evt.Title;
+    title.textContent = evt.Title || "";
 
     const meta = document.createElement("div");
     meta.className = "meta";
     const dt = document.createElement("div");
-    dt.textContent = `${evt.Date} • ${evt.Time}`;
+    dt.textContent = `${evt.Date || ""} • ${evt.Time || ""}`;
     const loc = document.createElement("div");
     loc.textContent = evt.Location || "";
     meta.append(dt, loc);
@@ -43,7 +45,16 @@ function showEventCard(evt) {
     blurb.className = "blurb";
     blurb.textContent = evt.Blurb || "";
 
-    left.append(hero, title, meta, blurb);
+    // Optional note if truncated
+    const blurbNote = document.createElement("div");
+    blurbNote.style.display = "none";
+    blurbNote.style.marginTop = ".5rem";
+    blurbNote.style.color = "#666";
+    blurbNote.style.fontSize = ".95rem";
+    blurbNote.style.fontWeight = "600";
+    blurbNote.textContent = "... Scan QR Code to Continue Reading";
+
+    left.append(hero, title, meta, blurb, blurbNote);
 
     // RIGHT: QR
     const right = document.createElement("div");
@@ -68,7 +79,14 @@ function showEventCard(evt) {
 
     // Animate in
     card.style.animation = "fadeInSlide 0.6s ease-out forwards";
-    resolve();
+
+    // After layout, detect overflow and show the note if needed
+    requestAnimationFrame(() => {
+      if (blurb.scrollHeight > blurb.clientHeight + 2) {
+        blurbNote.style.display = "block";
+      }
+      resolve();
+    });
   });
 }
 
