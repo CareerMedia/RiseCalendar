@@ -17,7 +17,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 /** Hide loader & show the app */
 function showApp() {
-  document.getElementById("loader").style.display = "none";
+  const loader = document.getElementById("loader");
+  if (loader) loader.style.display = "none";
   document.getElementById("app").classList.remove("hidden");
 }
 
@@ -38,7 +39,6 @@ function scheduleHourlyRefresh() {
   setInterval(async () => {
     const updated = await refreshEventsIntoState(); // events.js
     if (updated && Array.isArray(updated)) {
-      // Re-render calendar and swap the list (preserve index modulo length)
       highlightCalendarDays(updated);
       eventList = updated;
       console.log(`⟳ Feed refreshed. Current-month events: ${eventList.length}`);
@@ -68,12 +68,16 @@ async function runEventLoop() {
       await sleep(500);
 
       // Show pop-up
-      await showEventCard(evt);
+      if (typeof window.showEventCard === "function") {
+        await window.showEventCard(evt);
+      }
       await sleep(EVENT_CARD_DURATION);
 
       // Hide
       tile.classList.remove("pulse");
-      await hideEventCard();
+      if (typeof window.hideEventCard === "function") {
+        await window.hideEventCard();
+      }
     }
 
     // Calendar pause
@@ -88,6 +92,9 @@ async function runEventLoop() {
 
 /** Entry */
 document.addEventListener("DOMContentLoaded", async () => {
+  // Ensure overlay is definitely closed at boot
+  if (typeof window.forceOverlayClosed === "function") window.forceOverlayClosed();
+
   await initializeData();
 
   setTimeout(() => {
