@@ -26,18 +26,17 @@
 
     <!-- Calendar Grid -->
     <div id="calendar-grid"></div>
-
-    <!-- Event Overlay -->
-    <div id="event-overlay"></div>
   </div>
 
-  <!-- Scripts -->
+  <!-- IMPORTANT: Overlay lives at BODY ROOT for top-most stacking -->
+  <div id="event-overlay" aria-hidden="true"></div>
+
+  <!-- Scripts (order matters) -->
   <script src="lib/qrcode.min.js"></script>
   <script src="js/calendar.js"></script>
-  <!-- NEW: JSON events loader (replaces CSV) -->
   <script src="js/events.js"></script>
-  <script src="js/eventCard.js"></script>
   <script src="js/qr.js"></script>
+  <script src="js/eventCard.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
