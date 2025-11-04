@@ -5,7 +5,7 @@
 const calendarGrid = document.getElementById("calendar-grid");
 const monthTitleEl = document.getElementById("month-title");
 
-/** Sets header to “<Month> Events” */
+/** Header: “<Month> Events” */
 function setMonthTitle() {
   const now = new Date();
   const names = [
@@ -15,7 +15,7 @@ function setMonthTitle() {
   monthTitleEl.textContent = `${names[now.getMonth()]} Events`;
 }
 
-/** Draw a fixed 31-day grid with a small weekday label */
+/** Draw a fixed 31-day grid with small weekday label */
 function drawCalendarGrid() {
   const now = new Date();
   const y = now.getFullYear();
@@ -27,9 +27,8 @@ function drawCalendarGrid() {
     cell.className = "calendar-day";
     cell.dataset.day = i;
 
-    // weekday label for the current month date
-    const d = new Date(y, m, i);
-    const dow = d.toLocaleString(undefined, { weekday: "short" });
+    const dateObj = new Date(y, m, i);
+    const dow = dateObj.toLocaleString(undefined, { weekday: "short" });
 
     const dayNumber = document.createElement("div");
     dayNumber.className = "day-number";
@@ -48,30 +47,34 @@ function drawCalendarGrid() {
   }
 }
 
-/** Highlight days & stack ALL events per day in feed order */
+/** Show ALL titles for a day, in feed order (titles only) */
 function highlightCalendarDays(events) {
-  // Group by day
+  // Group by day number already computed in events.js
   const byDay = {};
   events.forEach(e => {
-    const d = parseInt(e.Day, 10);
+    const d = Number(e.Day);
     if (!byDay[d]) byDay[d] = [];
     byDay[d].push(e);
   });
 
-  Object.keys(byDay).forEach(dayKey => {
-    const dayNum = Number(dayKey);
-    const cell = calendarGrid.querySelector(`.calendar-day[data-day='${dayNum}']`);
+  Object.entries(byDay).forEach(([dayStr, list]) => {
+    const day = Number(dayStr);
+    const cell = calendarGrid.querySelector(`.calendar-day[data-day='${day}']`);
     if (!cell) return;
 
-    const allForDay = byDay[dayNum];
-
-    // Render events (we treat any item as event; the feed doesn’t have 'holiday')
-    if (allForDay.length) {
+    if (list.length) {
       cell.classList.add("event");
       const previewEl = cell.querySelector(".event-title-preview");
-      previewEl.innerHTML = allForDay
-        .map(ev => `<div class="event-preview-item">${ev.Title}</div>`)
+      // Only show the title for each event
+      previewEl.innerHTML = list
+        .map(ev => `<div class="event-preview-item">${escapeHTML(ev.Title || "")}</div>`)
         .join("");
     }
   });
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, m =>
+    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[m])
+  );
 }
