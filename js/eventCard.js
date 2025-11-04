@@ -1,43 +1,83 @@
+/* ======================================
+   js/eventCard.js — Show & Teardown Card
+   ====================================== */
+
+const overlay = document.getElementById("event-overlay");
+
 /**
- * Show the event card.
+ * Show the event card with image above the title on the left.
  * @param {Object} evt
- * @returns {Promise} resolves immediately so we can await a fixed display duration.
+ * @returns {Promise<void>}
  */
 function showEventCard(evt) {
   return new Promise(resolve => {
-    const overlay = document.getElementById("event-overlay");
     overlay.style.display = "flex";
-    overlay.innerHTML = `
-      <div class="event-card">
-        <div class="event-content">
-          <h2>${evt.Title}</h2>
-          <div class="datetime">${evt.Date} | ${evt.Time}</div>
-          <div class="location">${evt.Location}</div>
-          <div class="blurb">${evt.Blurb}</div>
-        </div>
-        <div class="qr-section">
-          <div id="qr-code"></div>
-          <span>Scan to RSVP</span>
-        </div>
-        <img id="event-logo" src="assets/logo.png" alt="Logo" />
-      </div>`;
-    generateQRCode(document.getElementById("qr-code"), evt.QR_Link);
+    overlay.innerHTML = "";
 
-    // kick off fadeIn
-    const card = overlay.querySelector(".event-card");
+    const card = document.createElement("div");
+    card.className = "event-card";
+
+    // LEFT: image + content
+    const left = document.createElement("div");
+    left.className = "event-content";
+
+    const hero = document.createElement("div");
+    hero.className = "event-hero";
+    const img = document.createElement("img");
+    img.src = evt.Image || "assets/placeholder-900x600.png";
+    img.alt = evt.Title || "Event Image";
+    hero.appendChild(img);
+
+    const title = document.createElement("h2");
+    title.textContent = evt.Title;
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const dt = document.createElement("div");
+    dt.textContent = `${evt.Date} • ${evt.Time}`;
+    const loc = document.createElement("div");
+    loc.textContent = evt.Location || "";
+    meta.append(dt, loc);
+
+    const blurb = document.createElement("div");
+    blurb.className = "blurb";
+    blurb.textContent = evt.Blurb || "";
+
+    left.append(hero, title, meta, blurb);
+
+    // RIGHT: QR
+    const right = document.createElement("div");
+    right.className = "qr-section";
+    const qrHolder = document.createElement("div");
+    qrHolder.id = "qr-code";
+    const qrLabel = document.createElement("span");
+    qrLabel.textContent = "Scan to RSVP";
+    right.append(qrHolder, qrLabel);
+
+    // Generate QR from event link
+    generateQRCode(qrHolder, evt.QR_Link || window.location.href);
+
+    // Logo
+    const logo = document.createElement("img");
+    logo.id = "event-logo";
+    logo.src = "assets/logo.png";
+    logo.alt = "Career Center Logo";
+
+    card.append(left, right, logo);
+    overlay.append(card);
+
+    // Animate in
     card.style.animation = "fadeInSlide 0.6s ease-out forwards";
-
     resolve();
   });
 }
 
 /**
- * Hide the event card with fade-out, then clear overlay.
- * @returns {Promise} resolves after fade-out completes.
+ * Fade out & hide overlay.
+ * @returns {Promise<void>}
  */
 function hideEventCard() {
   return new Promise(resolve => {
-    const overlay = document.getElementById("event-overlay");
     const card = overlay.querySelector(".event-card");
     if (!card) {
       overlay.style.display = "none";
