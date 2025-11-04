@@ -5,71 +5,73 @@
 const calendarGrid = document.getElementById("calendar-grid");
 const monthTitleEl = document.getElementById("month-title");
 
-/** 1. Header: “<Month> Events” */
+/** Sets header to “<Month> Events” */
 function setMonthTitle() {
-  const now   = new Date();
-  const names = ["January","February","March","April","May","June",
-                 "July","August","September","October","November","December"];
+  const now = new Date();
+  const names = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
   monthTitleEl.textContent = `${names[now.getMonth()]} Events`;
 }
 
-/** 2. Draw 31-day grid */
+/** Draw a fixed 31-day grid with a small weekday label */
 function drawCalendarGrid() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+
   calendarGrid.innerHTML = "";
-  for (let d = 1; d <= 31; d++) {
+  for (let i = 1; i <= 31; i++) {
     const cell = document.createElement("div");
     cell.className = "calendar-day";
-    cell.dataset.day = d;
+    cell.dataset.day = i;
 
-    const num = document.createElement("div");
-    num.className = "day-number";
-    num.textContent = d;
+    // weekday label for the current month date
+    const d = new Date(y, m, i);
+    const dow = d.toLocaleString(undefined, { weekday: "short" });
+
+    const dayNumber = document.createElement("div");
+    dayNumber.className = "day-number";
+    dayNumber.setAttribute("data-daynum", i);
+
+    const dowSpan = document.createElement("span");
+    dowSpan.className = "dow";
+    dowSpan.textContent = dow;
+    dayNumber.appendChild(dowSpan);
 
     const preview = document.createElement("div");
     preview.className = "event-title-preview";
 
-    cell.append(num, preview);
+    cell.append(dayNumber, preview);
     calendarGrid.append(cell);
   }
 }
 
-/**
- * 3. Highlight days: stack ALL event titles
- * @param {Array<Object>} items — from loadEventsFromCSV()
- */
-function highlightCalendarDays(items) {
+/** Highlight days & stack ALL events per day in feed order */
+function highlightCalendarDays(events) {
+  // Group by day
   const byDay = {};
-  items.forEach(e => {
-    const day = parseInt(e.Day, 10);
-    if (!byDay[day]) byDay[day] = [];
-    byDay[day].push(e);
+  events.forEach(e => {
+    const d = parseInt(e.Day, 10);
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(e);
   });
 
-  Object.entries(byDay).forEach(([dayStr, arr]) => {
-    const day  = Number(dayStr);
-    const cell = calendarGrid.querySelector(`.calendar-day[data-day='${day}']`);
+  Object.keys(byDay).forEach(dayKey => {
+    const dayNum = Number(dayKey);
+    const cell = calendarGrid.querySelector(`.calendar-day[data-day='${dayNum}']`);
     if (!cell) return;
 
-    // Events = anything NOT explicitly a holiday
-    const evs = arr.filter(e => (e.Type||"").trim().toLowerCase() !== "holiday");
-    if (evs.length) {
+    const allForDay = byDay[dayNum];
+
+    // Render events (we treat any item as event; the feed doesn’t have 'holiday')
+    if (allForDay.length) {
       cell.classList.add("event");
       const previewEl = cell.querySelector(".event-title-preview");
-      previewEl.innerHTML = evs
+      previewEl.innerHTML = allForDay
         .map(ev => `<div class="event-preview-item">${ev.Title}</div>`)
         .join("");
-    }
-
-    // Holidays (only if no events)
-    if (!evs.length) {
-      const hol = arr.filter(e => (e.Type||"").trim().toLowerCase() === "holiday");
-      if (hol.length) {
-        cell.classList.add("holiday");
-        const marker = document.createElement("div");
-        marker.className = "holiday-marker";
-        marker.textContent = hol[0].Title;
-        cell.append(marker);
-      }
     }
   });
 }
