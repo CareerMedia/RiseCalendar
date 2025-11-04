@@ -1,0 +1,121 @@
+/* ==================================
+   css/event.css — Solid White Event Card
+   ================================== */
+
+/* 1. Overlay backdrop (frosted glass) */
+#event-overlay {
+  display: none; /* shown via JS */
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  z-index: 999;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  overflow: auto;
+}
+
+/* 2. Card container with solid white interior and big rounding */
+.event-card {
+  position: relative;
+  width: 90%;
+  max-width: 1400px;
+  min-height: 80vh;
+  background: #ffffff;      /* solid white */
+  border-radius: 80px;      /* pronounced curves */
+  padding: 4rem;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  overflow: hidden;
+  animation: fadeInSlide 0.8s ease-out both;
+}
+
+/* 3. Left column: event details (aligned left, vertically centered) */
+.event-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  animation: fadeInSlide 0.8s ease-out both;
+}
+.event-content h2 {
+  font-size: 3rem;
+  color: #d22030;
+  margin-bottom: 1rem;
+}
+.event-content .datetime,
+.event-content .location {
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.event-content .blurb {
+  font-size: 1.1rem;
+  color: #444;
+  line-height: 1.6;
+  margin-top: 1.5rem;
+}
+
+/* 4. Right column: QR code (centered vertically) */
+.qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInSlide 1s ease-out both;
+}
+.qr-section #qr-code {
+  margin-bottom: 1rem;
+}
+.qr-section span {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* 5. Logo in top-right corner */
+#event-logo {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  height: 50px;
+  opacity: 0.85;
+}
+
+/* 6. Remove any hue/glow pseudo-element */
+.event-card::before {
+  display: none;
+}
+
+/* 7. Remove old accent bar */
+.accent-bar {
+  display: none;
+}
+
+/* 8. Slide & Fade Animations */
+@keyframes fadeInSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeOutSlide {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+}

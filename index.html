@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Career Center Event Calendar</title>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/loader.css" />
+  <link rel="stylesheet" href="css/calendar.css" />
+  <link rel="stylesheet" href="css/event.css" />
+</head>
+<body>
+  <!-- Loader -->
+  <div id="loader">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="hidden">
+    <!-- Header -->
+    <div id="calendar-header">
+      <img id="main-logo" src="assets/logowhite.png" alt="Career Center Logo"/>
+      <h1 id="month-title">Month Events</h1>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div id="calendar-grid"></div>
+
+    <!-- Event Overlay -->
+    <div id="event-overlay"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="lib/qrcode.min.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/eventCard.js"></script>
+  <script src="js/qr.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
