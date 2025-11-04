@@ -1,6 +1,6 @@
 /* ==================================
    css/event.css — Solid White Event Card
-   (Overlay starts truly hidden; only blurs when open)
+   (Overlay: immediate show/hide; popup always centered)
    ================================== */
 
 /* Overlay container — present but inert by default */
@@ -27,7 +27,8 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 
-  transition: opacity .25s ease, visibility 0s linear .25s;
+  /* Simpler transition: only fade opacity; visibility switches with class */
+  transition: opacity .25s ease;
 }
 
 /* Safety belt: if anything adds inline styles, force them off when closed */
@@ -42,13 +43,12 @@
 
 /* VISIBLE STATE — only when the popup is open */
 #event-overlay.is-open {
-  visibility: visible;
-  opacity: 1;
+  visibility: visible;          /* switch immediately */
+  opacity: 1;                   /* fade in */
   pointer-events: auto;
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  transition: opacity .25s ease;
 }
 
 /* Card fits within viewport with margins; never clips */
@@ -64,7 +64,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: clamp(16px, 2.5vw, 48px);
-  animation: fadeInSlide 0.8s ease-out both;
+  /* animation set by JS when shown */
 }
 
 /* Stack on narrower screens */
