@@ -1,6 +1,6 @@
 /* ======================================
    js/eventCard.js — Show & Teardown Card
-   (Class-driven overlay; starts closed)
+   (Class-driven overlay; robust guards & logs)
    ====================================== */
 
 const overlay = document.getElementById("event-overlay");
@@ -18,6 +18,8 @@ function forceOverlayClosed() {
   overlay.style.pointerEvents = "none";
   overlay.style.visibility = "hidden";
   overlay.style.opacity = "0";
+  // Debug
+  try { console.debug("[overlay] forced closed"); } catch {}
 }
 
 /**
@@ -28,82 +30,106 @@ function forceOverlayClosed() {
  */
 function showEventCard(evt) {
   return new Promise(resolve => {
-    // Open overlay (enables blur + clicks)
-    overlay.classList.add("is-open");
-    overlay.setAttribute("aria-hidden", "false");
-    overlay.innerHTML = "";
+    if (!overlay) {
+      console.error("[overlay] #event-overlay not found");
+      return resolve();
+    }
 
-    const card = document.createElement("div");
-    card.className = "event-card";
+    try {
+      // Open overlay (enables blur + clicks)
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden", "false");
+      overlay.innerHTML = "";
+      console.debug("[overlay] open & cleared");
 
-    // LEFT: image + content
-    const left = document.createElement("div");
-    left.className = "event-content";
+      const card = document.createElement("div");
+      card.className = "event-card";
 
-    const hero = document.createElement("div");
-    hero.className = "event-hero";
-    const img = document.createElement("img");
-    img.src = evt.Image || "assets/placeholder-900x600.png";
-    img.alt = evt.Title || "Event Image";
-    hero.appendChild(img);
+      // LEFT: image + content
+      const left = document.createElement("div");
+      left.className = "event-content";
 
-    const title = document.createElement("h2");
-    title.textContent = evt.Title || "";
+      const hero = document.createElement("div");
+      hero.className = "event-hero";
+      const img = document.createElement("img");
+      img.src = evt.Image || "assets/placeholder-900x600.png";
+      img.alt = evt.Title || "Event Image";
+      hero.appendChild(img);
 
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    const dt = document.createElement("div");
-    dt.textContent = `${evt.Date || ""} • ${evt.Time || ""}`;
-    const loc = document.createElement("div");
-    loc.textContent = evt.Location || "";
-    meta.append(dt, loc);
+      const title = document.createElement("h2");
+      title.textContent = evt.Title || "";
 
-    const blurb = document.createElement("div");
-    blurb.className = "blurb";
-    blurb.textContent = evt.Blurb || "";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const dt = document.createElement("div");
+      dt.textContent = `${evt.Date || ""} • ${evt.Time || ""}`;
+      const loc = document.createElement("div");
+      loc.textContent = evt.Location || "";
+      meta.append(dt, loc);
 
-    // Optional note if truncated
-    const blurbNote = document.createElement("div");
-    blurbNote.style.display = "none";
-    blurbNote.style.marginTop = ".5rem";
-    blurbNote.style.color = "#666";
-    blurbNote.style.fontSize = ".95rem";
-    blurbNote.style.fontWeight = "600";
-    blurbNote.textContent = "... Scan QR Code to Continue Reading";
+      const blurb = document.createElement("div");
+      blurb.className = "blurb";
+      blurb.textContent = evt.Blurb || "";
 
-    left.append(hero, title, meta, blurb, blurbNote);
+      // Optional note if truncated
+      const blurbNote = document.createElement("div");
+      blurbNote.style.display = "none";
+      blurbNote.style.marginTop = ".5rem";
+      blurbNote.style.color = "#666";
+      blurbNote.style.fontSize = ".95rem";
+      blurbNote.style.fontWeight = "600";
+      blurbNote.textContent = "... Scan QR Code to Continue Reading";
 
-    // RIGHT: QR
-    const right = document.createElement("div");
-    right.className = "qr-section";
-    const qrHolder = document.createElement("div");
-    qrHolder.id = "qr-code";
-    const qrLabel = document.createElement("span");
-    qrLabel.textContent = "Scan to RSVP";
-    right.append(qrHolder, qrLabel);
+      left.append(hero, title, meta, blurb, blurbNote);
 
-    // Generate QR from event link
-    generateQRCode(qrHolder, evt.QR_Link || window.location.href);
+      // RIGHT: QR
+      const right = document.createElement("div");
+      right.className = "qr-section";
+      const qrHolder = document.createElement("div");
+      qrHolder.id = "qr-code";
+      const qrLabel = document.createElement("span");
+      qrLabel.textContent = "Scan to RSVP";
+      right.append(qrHolder, qrLabel);
 
-    // Logo
-    const logo = document.createElement("img");
-    logo.id = "event-logo";
-    logo.src = "assets/logo.png";
-    logo.alt = "Career Center Logo";
-
-    card.append(left, right, logo);
-    overlay.append(card);
-
-    // Animate in
-    card.style.animation = "fadeInSlide 0.6s ease-out forwards";
-
-    // After layout, detect overflow and show the note if needed
-    requestAnimationFrame(() => {
-      if (blurb.scrollHeight > blurb.clientHeight + 2) {
-        blurbNote.style.display = "block";
+      // Generate QR from event link (guarded)
+      try {
+        generateQRCode(qrHolder, evt.QR_Link || window.location.href);
+      } catch (qrErr) {
+        console.warn("[overlay] QR generation failed:", qrErr);
       }
+
+      // Logo
+      const logo = document.createElement("img");
+      logo.id = "event-logo";
+      logo.src = "assets/logo.png";
+      logo.alt = "Career Center Logo";
+
+      card.append(left, right, logo);
+      overlay.append(card);
+      console.debug("[overlay] card appended");
+
+      // Force a reflow before starting CSS animation (prevents do-nothing)
+      // eslint-disable-next-line no-unused-expressions
+      card.offsetHeight; // reflow
+
+      // Animate in
+      card.style.animation = "fadeInSlide 0.6s ease-out forwards";
+
+      // After layout, detect overflow and show the note if needed
+      requestAnimationFrame(() => {
+        try {
+          if (blurb.scrollHeight > blurb.clientHeight + 2) {
+            blurbNote.style.display = "block";
+          }
+        } catch {}
+        resolve();
+      });
+    } catch (err) {
+      console.error("[overlay] showEventCard failed:", err);
+      // If something broke mid-way, ensure overlay is usable next time
+      forceOverlayClosed();
       resolve();
-    });
+    }
   });
 }
 
@@ -113,16 +139,29 @@ function showEventCard(evt) {
  */
 function hideEventCard() {
   return new Promise(resolve => {
-    const card = overlay.querySelector(".event-card");
-    if (!card) {
-      forceOverlayClosed();
-      return resolve();
-    }
-    card.style.animation = "fadeOutSlide 0.6s ease-in forwards";
-    card.addEventListener("animationend", () => {
+    if (!overlay) return resolve();
+
+    try {
+      const card = overlay.querySelector(".event-card");
+      if (!card) {
+        forceOverlayClosed();
+        return resolve();
+      }
+
+      // Force reflow before starting fadeOut (more reliable on some browsers)
+      // eslint-disable-next-line no-unused-expressions
+      card.offsetHeight;
+
+      card.style.animation = "fadeOutSlide 0.6s ease-in forwards";
+      card.addEventListener("animationend", () => {
+        forceOverlayClosed();
+        resolve();
+      }, { once: true });
+    } catch (err) {
+      console.error("[overlay] hideEventCard failed:", err);
       forceOverlayClosed();
       resolve();
-    }, { once: true });
+    }
   });
 }
 
