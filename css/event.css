@@ -1,51 +1,76 @@
 /* ==================================
    css/event.css — Solid White Event Card
-   (Popup always centered and fully visible)
+   (Overlay starts truly hidden; only blurs when open)
    ================================== */
 
+/* Overlay container — present but inert by default */
 #event-overlay {
-  display: none; /* toggled via JS */
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
   z-index: 999;
-  /* Always center the card */
+
+  /* Keep centering context available */
   display: flex;
   align-items: center;
   justify-content: center;
 
-  /* Responsive safe padding so the card never touches edges */
+  /* Safe margins so card never hugs edges */
   --overlay-pad-y: clamp(16px, 3vh, 48px);
   --overlay-pad-x: clamp(16px, 3vw, 64px);
   padding: var(--overlay-pad-y) var(--overlay-pad-x);
-  overflow: hidden; /* prevent the overlay from scrolling; the card handles its own overflow */
+
+  /* HIDDEN STATE (default) — no blur, no paint, no clicks */
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  transition: opacity .25s ease, visibility 0s linear .25s;
 }
 
-/* Card fits within viewport with margins and never clips */
+/* Safety belt: if anything adds inline styles, force them off when closed */
+#event-overlay:not(.is-open) {
+  background: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* VISIBLE STATE — only when the popup is open */
+#event-overlay.is-open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  transition: opacity .25s ease;
+}
+
+/* Card fits within viewport with margins; never clips */
 .event-card {
   position: relative;
   width: min(92vw, 1400px);
-  /* key: constrain height so it never exceeds the viewport minus overlay padding */
   max-height: calc(100dvh - (var(--overlay-pad-y) * 2));
-  background: #ffffff;          /* solid white for readability */
-  border-radius: 80px;          /* your approved curve */
-  /* Pad scales gently on shorter screens */
+  background: #ffffff;          /* solid white */
+  border-radius: 80px;
   padding: clamp(24px, 2.5vh, 48px) clamp(24px, 3vw, 64px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
-  overflow: hidden;             /* card controls internal scroll areas */
+  overflow: hidden;
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: clamp(16px, 2.5vw, 48px);
   animation: fadeInSlide 0.8s ease-out both;
 }
 
-/* On narrower displays, stack content for fit */
+/* Stack on narrower screens */
 @media (max-width: 1100px) {
   .event-card {
     grid-template-columns: 1fr;
-    max-height: calc(100dvh - (var(--overlay-pad-y) * 2));
   }
 }
 
@@ -54,13 +79,13 @@
   display: grid;
   grid-template-rows: auto auto 1fr;
   gap: 1rem;
-  min-height: 0;  /* allow inner scrollers to fit */
+  min-height: 0;
 }
 
 /* Hero image (900x600 aspect) */
 .event-hero {
   width: 100%;
-  aspect-ratio: 3 / 2; /* 900x600 */
+  aspect-ratio: 3 / 2;
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 12px 30px rgba(0,0,0,0.12);
@@ -94,9 +119,9 @@
   font-size: 1.05rem;
   color: #222;
   line-height: 1.6;
-  max-height: clamp(10rem, 35vh, 18rem); /* adapt to viewport height */
+  max-height: clamp(10rem, 35vh, 18rem);
   overflow: auto;
-  padding-right: 0.5rem; /* room for scrollbar */
+  padding-right: 0.5rem;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -119,7 +144,7 @@
   opacity: 0.85;
 }
 
-/* Animations (unchanged) */
+/* Animations */
 @keyframes fadeInSlide {
   0% { opacity: 0; transform: translateY(30px); }
   100% { opacity: 1; transform: translateY(0); }
