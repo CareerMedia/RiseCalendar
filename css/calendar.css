@@ -1,8 +1,18 @@
 /* ===================================
    css/calendar.css — Glassmorphic Month View
+   (Responsive fit with safe margins on all screens)
    =================================== */
 
-/* 1. Reset & Base */
+/* 0) Design tokens for responsive padding/gap */
+:root {
+  /* Outer margins that adapt but stay generous on TVs */
+  --header-pad-x: clamp(2rem, 5vw, 6rem);
+  --header-pad-y: clamp(1rem, 2.5vh, 2.5rem);
+  --grid-pad-x:   clamp(2rem, 5vw, 6rem);
+  --grid-pad-y:   clamp(1rem, 3vh, 3rem);
+  --grid-gap:     clamp(0.6rem, 1.2vw, 1rem);
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -13,18 +23,17 @@ html, body {
   background-color: #fafafa;
   color: #222;
 }
-
 .hidden { display: none; }
 
-/* 2. Animated tri-color gradient background (unchanged) */
+/* 1) App fills the dynamic viewport height; use CSS Grid so header is auto and grid gets the rest */
 #app {
-  height: 100vh;
+  height: 100dvh; /* dynamic vh prevents mobile/OS UI from causing overflow */
   width: 100vw;
+  display: grid;
+  grid-template-rows: auto 1fr; /* header auto, calendar takes remaining height */
   background: linear-gradient(115deg, #d22030, #e64b36, #2ca5da);
   background-size: 200% 200%;
   animation: gradientBG 30s ease infinite;
-  display: flex;
-  flex-direction: column;
 }
 
 @keyframes gradientBG {
@@ -35,21 +44,19 @@ html, body {
   100% { background-position:   0% 50%; }
 }
 
-/* 3. Header (glassmorphic) */
+/* 2) Header keeps glass look, but with clamped padding (generous yet safe) */
 #calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2rem 4rem; /* heavier margins for TV edge safety */
+  padding: var(--header-pad-y) var(--header-pad-x);
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
-
 #main-logo { height: 60px; width: auto; }
-
 #month-title {
   font-size: 2.5rem;
   font-weight: 800;
@@ -59,23 +66,32 @@ html, body {
   text-shadow: 0 2px 4px rgba(0,0,0,0.7);
 }
 
-/* 4. Calendar grid */
+/* 3) Calendar grid always fits the remaining viewport height */
 #calendar-grid {
-  flex: 1;
+  /* critical to let this flex area actually shrink/fit */
+  min-height: 0; /* prevents min-content overflow in grid/flex layouts */
+  min-width: 0;
+
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(5, 1fr);
-  gap: 1rem;
-  padding: 2rem 4rem; /* heavier margins for TV edge safety */
+  grid-template-rows: repeat(5, 1fr); /* fixed 5 rows */
+  gap: var(--grid-gap);
+
+  padding: var(--grid-pad-y) var(--grid-pad-x);
   box-sizing: border-box;
+
+  /* If content inside a tile is tall, clip/scroll inside the tile, not here */
+  overflow: hidden;
 }
 
-/* 5. Glassmorphic day cards */
+/* 4) Tiles keep glassmorphism; ensure inner content can shrink */
 .calendar-day {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-height: 0; /* allow child to shrink within the fixed row */
+  min-width: 0;
   padding: 1rem;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.15);
@@ -88,7 +104,6 @@ html, body {
   cursor: default;
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
-
 .calendar-day:hover {
   transform: translateY(-4px);
   box-shadow:
@@ -96,11 +111,12 @@ html, body {
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* 6. Day number + small day-of-week label */
+/* 5) Day number + small day-of-week */
 .day-number {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
+  flex: 0 0 auto; /* do not stretch */
 }
 .day-number::before {
   content: attr(data-daynum);
@@ -118,9 +134,12 @@ html, body {
   text-transform: uppercase;
 }
 
-/* 7. Multi-line event previews (show all events per day) */
+/* 6) Event titles stack; scroll inside tile if too many (prevents page cutoff) */
 .event-title-preview {
   margin-top: 0.5rem;
+  min-height: 0;
+  overflow: auto;                 /* scroll inside tile, not the page */
+  -webkit-overflow-scrolling: touch;
 }
 .event-title-preview .event-preview-item {
   display: block;
@@ -131,7 +150,7 @@ html, body {
   margin-bottom: 0.3rem;
 }
 
-/* 8. Holiday marker */
+/* 7) Holiday styling (if used) */
 .holiday-marker {
   font-size: 0.8rem;
   color: #eee;
@@ -141,7 +160,7 @@ html, body {
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 
-/* 9. Strong outlines (unchanged) */
+/* 8) Strong outlines */
 .calendar-day.event {
   border-color: #ffffff;
   box-shadow:
@@ -155,7 +174,7 @@ html, body {
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-/* 10. Pulse animation */
+/* 9) Pulse */
 @keyframes pulse {
   0%   { transform: scale(1); }
   50%  { transform: scale(1.05); }
