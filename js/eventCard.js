@@ -1,18 +1,36 @@
 /* ======================================
    js/eventCard.js — Show & Teardown Card
+   (Class-driven overlay; starts closed)
    ====================================== */
 
 const overlay = document.getElementById("event-overlay");
 
+/** Hard-close overlay in case anything left styles behind */
+function forceOverlayClosed() {
+  if (!overlay) return;
+  overlay.classList.remove("is-open");
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.innerHTML = "";
+  // Nuke any inline styles that might have been set elsewhere
+  overlay.style.background = "none";
+  overlay.style.backdropFilter = "none";
+  overlay.style.webkitBackdropFilter = "none";
+  overlay.style.pointerEvents = "none";
+  overlay.style.visibility = "hidden";
+  overlay.style.opacity = "0";
+}
+
 /**
- * Show the event card with image above the title on the left.
+ * Show the event card.
  * Adds a “continue reading” cue if the blurb is too long.
  * @param {Object} evt
  * @returns {Promise<void>}
  */
 function showEventCard(evt) {
   return new Promise(resolve => {
-    overlay.style.display = "flex";
+    // Open overlay (enables blur + clicks)
+    overlay.classList.add("is-open");
+    overlay.setAttribute("aria-hidden", "false");
     overlay.innerHTML = "";
 
     const card = document.createElement("div");
@@ -22,7 +40,6 @@ function showEventCard(evt) {
     const left = document.createElement("div");
     left.className = "event-content";
 
-    // Hero image (900x600 aspect)
     const hero = document.createElement("div");
     hero.className = "event-hero";
     const img = document.createElement("img");
@@ -91,21 +108,23 @@ function showEventCard(evt) {
 }
 
 /**
- * Fade out & hide overlay.
+ * Fade out & close overlay.
  * @returns {Promise<void>}
  */
 function hideEventCard() {
   return new Promise(resolve => {
     const card = overlay.querySelector(".event-card");
     if (!card) {
-      overlay.style.display = "none";
+      forceOverlayClosed();
       return resolve();
     }
     card.style.animation = "fadeOutSlide 0.6s ease-in forwards";
     card.addEventListener("animationend", () => {
-      overlay.style.display = "none";
-      overlay.innerHTML = "";
+      forceOverlayClosed();
       resolve();
     }, { once: true });
   });
 }
+
+/* Ensure overlay starts hard-closed even if CSS/HTML changed */
+document.addEventListener("DOMContentLoaded", forceOverlayClosed);
